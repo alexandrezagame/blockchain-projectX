@@ -66,37 +66,65 @@ describe('Blockchain', () => {
   });
 
   describe('replaceChain()', () => {
+    let errorMock;
+    let logMock;
+
+    beforeEach(() => {
+      errorMock = jest.fn();
+      logMock = jest.fn();
+
+      global.console.error = errorMock;
+      global.console.log = logMock;
+    });
+
     describe('when the new chain is not longer', () => {
-      it('does not replace the chain', () => {
+      beforeEach(() => {
         newChain.chain[0] = { new: 'chain' };
-
         blockchain.replaceChain(newChain.chain);
-
+      });
+      it('does not replace the chain', () => {
         expect(blockchain.chain).toEqual(originalChain);
+      });
+
+      it('logs an error', () => {
+        expect(errorMock).toHaveBeenCalled();
       });
     });
 
     describe('when the chain is longer', () => {
       beforeEach(() => {
-        blockchain = new Blockchain();
-        newChain = new Blockchain();
-        originalChain = blockchain.chain;
+        newChain.addBlock({ data: 'Bears' });
+        newChain.addBlock({ data: 'Beets' });
+        newChain.addBlock({ data: 'Battlestar Galactica' });
       });
 
       describe('and the chain is invalid', () => {
-        it('does not replace the chain', () => {
+        beforeEach(() => {
           newChain.chain[2].hash = 'some-fake-hash';
 
           blockchain.replaceChain(newChain.chain);
+        });
+
+        it('does not replace the chain', () => {
           expect(blockchain.chain).toEqual(originalChain);
+        });
+
+        it('logs an error', () => {
+          expect(errorMock).toHaveBeenCalled();
         });
       });
     });
 
     describe('and the chain is valid', () => {
-      it('replaces the chain', () => {
+      beforeEach(() => {
         blockchain.replaceChain(newChain.chain);
+      });
+      it('replaces the chain', () => {
         expect(blockchain.chain).toEqual(newChain.chain);
+      });
+
+      it('logs about the chain replacement', () => {
+        expect(logMock).toHaveBeenCalled();
       });
     });
   });
